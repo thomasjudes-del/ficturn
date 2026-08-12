@@ -9,11 +9,24 @@ import {
 } from "./story";
 import { WIDGET_HTML, WIDGET_MIME, WIDGET_URI } from "./widget";
 
-const VERSION = "0.1.1";
+const VERSION = "0.1.2";
 const LEGACY_WIDGET_URI = "ui://ficturn/reader.html";
 const STORY_IDS = ["the-safehouse-rule", "room-713", "the-last-reply"] as const;
 const storyIdSchema = z.enum(STORY_IDS);
 const MAX_PART = Math.max(...stories.map((item) => item.fragments.length));
+
+// FICTURN's current reader is fully self-contained: no remote scripts, images,
+// frames, or direct network fetches from the iframe. Keep this CSP intentionally
+// empty and expand it only if the UI later adds an external dependency.
+const UI_CSP = {
+  connectDomains: [] as string[],
+  resourceDomains: [] as string[],
+};
+
+const LEGACY_UI_CSP = {
+  connect_domains: [] as string[],
+  resource_domains: [] as string[],
+};
 
 function appMeta() {
   return {
@@ -44,8 +57,6 @@ function fragmentPayload(storyId: string, part: number) {
     total: story.fragments.length,
     text: getFragment(story.id, part),
     isEnd: part === story.fragments.length,
-    // Carry the compact library with every story result so the reader can
-    // open the catalog even when ChatGPT is still using an older frozen tool snapshot.
     library: getStorySummaries(),
   };
 }
@@ -84,6 +95,15 @@ function catalogResult() {
 }
 
 function registerReaderResource(server: McpServer, uri: string, label: string) {
+  const resourceMeta = {
+    ui: {
+      prefersBorder: true,
+      csp: UI_CSP,
+    },
+    "openai/widgetPrefersBorder": true,
+    "openai/widgetCSP": LEGACY_UI_CSP,
+  } as Record<string, unknown>;
+
   server.registerResource(
     label,
     uri,
@@ -91,10 +111,7 @@ function registerReaderResource(server: McpServer, uri: string, label: string) {
       title: "FICTURN Reader",
       description: "Inline library and reader for short authored fiction.",
       mimeType: WIDGET_MIME,
-      _meta: {
-        ui: { prefersBorder: true },
-        "openai/widgetPrefersBorder": true,
-      },
+      _meta: resourceMeta,
     },
     async (resourceUri) => ({
       contents: [
@@ -102,10 +119,7 @@ function registerReaderResource(server: McpServer, uri: string, label: string) {
           uri: resourceUri.href,
           mimeType: WIDGET_MIME,
           text: WIDGET_HTML,
-          _meta: {
-            ui: { prefersBorder: true },
-            "openai/widgetPrefersBorder": true,
-          },
+          _meta: resourceMeta,
         },
       ],
     }),
@@ -183,7 +197,6 @@ function createServer() {
     async ({ storyId, part }) => storyResult(storyId ?? DEFAULT_STORY_ID, part),
   );
 
-  // Keep both URIs available so already-configured ChatGPT drafts continue to work.
   registerReaderResource(server, WIDGET_URI, "FICTURN reader v2");
   registerReaderResource(server, LEGACY_WIDGET_URI, "FICTURN reader legacy alias");
 
