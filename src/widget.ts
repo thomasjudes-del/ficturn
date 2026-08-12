@@ -23,6 +23,7 @@ export const WIDGET_HTML = `<!doctype html>
     border-radius: 18px;
     background: color-mix(in srgb, Canvas 96%, transparent);
   }
+  .reader:focus { outline: none; }
   .brand {
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11px;
@@ -62,28 +63,38 @@ export const WIDGET_HTML = `<!doctype html>
     letter-spacing: .002em;
   }
   .footer {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     margin-top: 22px;
     padding-top: 14px;
     border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
     font-family: ui-sans-serif, system-ui, sans-serif;
   }
-  .part { font-size: 12px; opacity: .55; }
+  .part {
+    grid-column: 2;
+    font-size: 12px;
+    opacity: .55;
+    white-space: nowrap;
+  }
   button {
     appearance: none;
     border: 1px solid currentColor;
     border-radius: 999px;
-    padding: 10px 16px;
-    font: 600 14px/1 ui-sans-serif, system-ui, sans-serif;
+    padding: 10px 14px;
+    font: 600 13px/1 ui-sans-serif, system-ui, sans-serif;
     color: inherit;
     background: transparent;
     cursor: pointer;
+    white-space: nowrap;
   }
   button:disabled { opacity: .4; cursor: default; }
+  #prev { grid-column: 1; justify-self: start; }
+  #next { grid-column: 3; justify-self: end; }
   .end {
+    grid-column: 3;
+    justify-self: end;
     font-family: ui-sans-serif, system-ui, sans-serif;
     font-size: 13px;
     font-weight: 650;
@@ -97,16 +108,18 @@ export const WIDGET_HTML = `<!doctype html>
     margin-top: 10px;
     min-height: 16px;
   }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-  <main class="reader">
+  <main class="reader" id="reader" tabindex="-1">
     <div class="brand">FICTURN · Stories you enter.</div>
     <h1 id="title">FICTURN</h1>
     <div class="meta" id="meta">Loading story…</div>
     <div class="progress"><div id="bar"></div></div>
     <article class="text" id="text">Open this story inside ChatGPT to begin.</article>
     <div class="footer">
+      <button id="prev" type="button" hidden>← Previous</button>
       <div class="part" id="part"></div>
       <button id="next" type="button">Continue →</button>
       <div class="end" id="end" hidden>End</div>
@@ -115,14 +128,17 @@ export const WIDGET_HTML = `<!doctype html>
   </main>
 <script>
 (() => {
+  const readerEl = document.getElementById('reader');
   const titleEl = document.getElementById('title');
   const metaEl = document.getElementById('meta');
   const textEl = document.getElementById('text');
   const partEl = document.getElementById('part');
   const barEl = document.getElementById('bar');
+  const prevEl = document.getElementById('prev');
   const nextEl = document.getElementById('next');
   const endEl = document.getElementById('end');
   const statusEl = document.getElementById('status');
+  const visited = new Map();
   let current = null;
 
   function resize() {
@@ -131,21 +147,45 @@ export const WIDGET_HTML = `<!doctype html>
     });
   }
 
-  function render(data) {
+  function jumpToTop() {
+    const jump = () => {
+      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch (_) {}
+      try {
+        if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+      } catch (_) {}
+      try { readerEl.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' }); } catch (_) {}
+      try { readerEl.focus({ preventScroll: false }); } catch (_) {}
+    };
+
+    // ChatGPT can resize/re-anchor the embedded widget after the tool result lands.
+    // Re-assert the top position after those layout passes so a new fragment
+    // never opens halfway down the prose on mobile.
+    jump();
+    requestAnimationFrame(jump);
+    setTimeout(jump, 80);
+    setTimeout(jump, 220);
+  }
+
+  function render(data, options = {}) {
     if (!data || typeof data !== 'object' || !data.text) return false;
+    const shouldJump = options.jump !== false;
     current = data;
+    visited.set(data.part, data);
     titleEl.textContent = data.title || 'FICTURN';
     const tags = Array.isArray(data.tags) ? data.tags.join(' · ') : '';
     metaEl.textContent = [tags, data.readingMinutes ? data.readingMinutes + ' min' : ''].filter(Boolean).join(' · ');
     textEl.textContent = data.text;
     partEl.textContent = 'Part ' + data.part + ' / ' + data.total;
     barEl.style.width = Math.round((data.part / data.total) * 100) + '%';
+
     const ended = Boolean(data.isEnd);
+    prevEl.hidden = data.part <= 1;
     nextEl.hidden = ended;
     endEl.hidden = !ended;
     statusEl.textContent = ended ? 'You have finished this FICTURN.' : '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     resize();
+    if (shouldJump) jumpToTop();
     return true;
   }
 
@@ -160,8 +200,15 @@ export const WIDGET_HTML = `<!doctype html>
   async function continueStory() {
     if (!current || current.isEnd) return;
     const nextPart = current.part + 1;
+
+    if (visited.has(nextPart)) {
+      render(visited.get(nextPart));
+      return;
+    }
+
     nextEl.disabled = true;
     nextEl.textContent = 'Opening…';
+    prevEl.disabled = true;
     statusEl.textContent = '';
 
     try {
@@ -180,13 +227,26 @@ export const WIDGET_HTML = `<!doctype html>
     } finally {
       nextEl.disabled = false;
       nextEl.textContent = 'Continue →';
+      prevEl.disabled = false;
       resize();
     }
   }
 
+  function previousStory() {
+    if (!current || current.part <= 1) return;
+    const previousPart = current.part - 1;
+    const previous = visited.get(previousPart);
+    if (previous) {
+      render(previous);
+    } else {
+      statusEl.textContent = 'The previous part is not available in this reader session.';
+    }
+  }
+
+  prevEl.addEventListener('click', previousStory);
   nextEl.addEventListener('click', continueStory);
 
-  if (window.openai?.toolOutput) render(window.openai.toolOutput);
+  if (window.openai?.toolOutput) render(window.openai.toolOutput, { jump: false });
 
   window.addEventListener('openai:set_globals', (event) => {
     const globals = event?.detail?.globals || event?.detail || {};
