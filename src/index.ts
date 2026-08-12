@@ -1,6 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/server";
-import { createMcpHandler } from "agents/mcp/server";
-import * as z from "zod/v4";
+import { McpServer, createMcpHandler } from "@modelcontextprotocol/server";
+import { z } from "zod";
 import { getFragment, story } from "./story";
 import { WIDGET_HTML, WIDGET_MIME, WIDGET_URI } from "./widget";
 
@@ -12,6 +11,7 @@ function appMeta() {
       resourceUri: WIDGET_URI,
       visibility: ["app", "model"],
     },
+    // ChatGPT compatibility metadata for the V0 reader.
     "openai/outputTemplate": WIDGET_URI,
     "openai/widgetAccessible": true,
     "openai/toolInvocation/invoking": "Opening FICTURN…",
@@ -127,12 +127,10 @@ function createServer() {
   return server;
 }
 
-const handleMcp = createMcpHandler(createServer, {
-  route: "/mcp",
-});
+const mcp = createMcpHandler(createServer);
 
 export default {
-  async fetch(request: Request, env: unknown, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/") {
@@ -150,6 +148,10 @@ export default {
       );
     }
 
-    return handleMcp(request, env, ctx);
+    if (url.pathname === "/mcp") {
+      return mcp.fetch(request);
+    }
+
+    return new Response("Not Found", { status: 404 });
   },
 } satisfies ExportedHandler;
