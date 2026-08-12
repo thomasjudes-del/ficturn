@@ -1,5 +1,5 @@
 export const WIDGET_URI = "ui://ficturn/reader.html";
-export const WIDGET_MIME = "text/html;profile=mcp-app";
+export const WIDGET_MIME = "text/html+skybridge";
 
 export const WIDGET_HTML = `<!doctype html>
 <html>
