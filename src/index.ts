@@ -68,8 +68,8 @@ function createServer() {
         openWorldHint: false,
       },
       _meta: appMeta(),
-    } as any,
-    async () => toolResult(1) as any,
+    },
+    async () => toolResult(1),
   );
 
   server.registerTool(
@@ -92,8 +92,8 @@ function createServer() {
         openWorldHint: false,
       },
       _meta: appMeta(),
-    } as any,
-    async ({ part }: { part: number }) => toolResult(part) as any,
+    },
+    async ({ part }) => toolResult(part),
   );
 
   server.registerResource(
@@ -107,21 +107,20 @@ function createServer() {
         ui: { prefersBorder: true },
         "openai/widgetPrefersBorder": true,
       },
-    } as any,
-    async (uri: URL) =>
-      ({
-        contents: [
-          {
-            uri: uri.href,
-            mimeType: WIDGET_MIME,
-            text: WIDGET_HTML,
-            _meta: {
-              ui: { prefersBorder: true },
-              "openai/widgetPrefersBorder": true,
-            },
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: WIDGET_MIME,
+          text: WIDGET_HTML,
+          _meta: {
+            ui: { prefersBorder: true },
+            "openai/widgetPrefersBorder": true,
           },
-        ],
-      }) as any,
+        },
+      ],
+    }),
   );
 
   return server;
