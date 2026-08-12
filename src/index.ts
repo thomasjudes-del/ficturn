@@ -180,10 +180,9 @@ function createServer() {
     async ({ storyId, part }) => storyResult(storyId ?? DEFAULT_STORY_ID, part),
   );
 
+  // Keep both URIs available so already-configured ChatGPT drafts continue to work.
   registerReaderResource(server, WIDGET_URI, "FICTURN reader v2");
-  if (WIDGET_URI !== LEGACY_WIDGET_URI) {
-    registerReaderResource(server, LEGACY_WIDGET_URI, "FICTURN reader legacy alias");
-  }
+  registerReaderResource(server, LEGACY_WIDGET_URI, "FICTURN reader legacy alias");
 
   return server;
 }
