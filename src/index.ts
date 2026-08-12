@@ -9,7 +9,7 @@ import {
 } from "./story";
 import { WIDGET_HTML, WIDGET_MIME, WIDGET_URI } from "./widget";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 const LEGACY_WIDGET_URI = "ui://ficturn/reader.html";
 const STORY_IDS = ["the-safehouse-rule", "room-713", "the-last-reply"] as const;
 const storyIdSchema = z.enum(STORY_IDS);
@@ -44,6 +44,9 @@ function fragmentPayload(storyId: string, part: number) {
     total: story.fragments.length,
     text: getFragment(story.id, part),
     isEnd: part === story.fragments.length,
+    // Carry the compact library with every story result so the reader can
+    // open the catalog even when ChatGPT is still using an older frozen tool snapshot.
+    library: getStorySummaries(),
   };
 }
 
