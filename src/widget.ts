@@ -10,7 +10,7 @@ export const WIDGET_HTML = `<!doctype html>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: transparent; color: inherit; }
-  .reader {
+  .shell {
     max-width: 720px;
     margin: 0 auto;
     padding: 18px;
@@ -18,22 +18,96 @@ export const WIDGET_HTML = `<!doctype html>
     border-radius: 18px;
     background: color-mix(in srgb, Canvas 96%, transparent);
   }
-  .brand, .meta, .part, .status, button {
+  .ui, .brand, .meta, .part, .status, button, .card-meta, .card-tags {
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 22px;
+    margin-bottom: 12px;
   }
   .brand {
     font-size: 11px;
     letter-spacing: .16em;
     text-transform: uppercase;
     opacity: .58;
-    margin-bottom: 14px;
+  }
+  .library-link {
+    border: 0;
+    padding: 4px 0;
+    background: transparent;
+    font-size: 12px;
+    opacity: .66;
+  }
+  h1, h2, .card-title {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
   }
   h1 {
-    font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
     font-size: 25px;
     line-height: 1.08;
     margin: 0 0 5px;
     font-weight: 650;
+  }
+  h2 {
+    font-size: 23px;
+    line-height: 1.12;
+    margin: 0 0 6px;
+    font-weight: 650;
+  }
+  .catalog-sub {
+    margin: 0 0 16px;
+    font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+    opacity: .66;
+  }
+  .catalog-window {
+    max-height: 62dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px;
+  }
+  .catalog-list {
+    display: grid;
+    gap: 10px;
+  }
+  .story-card {
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, currentColor 13%, transparent);
+    border-radius: 14px;
+  }
+  .card-meta {
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    opacity: .56;
+    margin-bottom: 5px;
+  }
+  .card-title {
+    font-size: 20px;
+    line-height: 1.12;
+    font-weight: 650;
+    margin-bottom: 7px;
+  }
+  .card-hook {
+    font: 14px/1.48 ui-serif, Georgia, Cambria, "Times New Roman", serif;
+    margin-bottom: 10px;
+  }
+  .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-tags {
+    min-width: 0;
+    font-size: 11px;
+    opacity: .52;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .meta { font-size: 12px; opacity: .62; margin-bottom: 16px; }
   .progress { height: 2px; background: color-mix(in srgb, currentColor 12%, transparent); margin-bottom: 14px; overflow: hidden; }
@@ -80,31 +154,49 @@ export const WIDGET_HTML = `<!doctype html>
   }
   button:disabled { opacity: .4; }
   #prev { grid-column: 1; justify-self: start; }
-  #next { grid-column: 3; justify-self: end; }
-  .end { grid-column: 3; justify-self: end; font: 650 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  #next, #more { grid-column: 3; justify-self: end; }
   .status { min-height: 14px; margin-top: 8px; font-size: 11px; opacity: .58; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<main class="reader">
-  <div class="brand">FICTURN · Stories you enter.</div>
-  <h1 id="title">FICTURN</h1>
-  <div class="meta" id="meta">Loading story…</div>
-  <div class="progress"><div id="bar"></div></div>
-  <div class="reading-window" id="readingWindow">
-    <article class="text" id="text">Open this story inside ChatGPT to begin.</article>
+<main class="shell">
+  <div class="topbar">
+    <div class="brand">FICTURN · Stories you enter.</div>
+    <button class="library-link" id="library" type="button" hidden>Library</button>
   </div>
-  <div class="footer">
-    <button id="prev" type="button" hidden>← Previous</button>
-    <div class="part" id="part"></div>
-    <button id="next" type="button">Continue →</button>
-    <div class="end" id="end" hidden>End</div>
-  </div>
+
+  <section id="catalogView" hidden>
+    <h2>Choose a story</h2>
+    <p class="catalog-sub">Finished, authored fiction made to be read inside the conversation.</p>
+    <div class="catalog-window">
+      <div class="catalog-list" id="catalog"></div>
+    </div>
+  </section>
+
+  <section id="storyView" hidden>
+    <h1 id="title">FICTURN</h1>
+    <div class="meta" id="meta">Loading story…</div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="reading-window" id="readingWindow">
+      <article class="text" id="text">Open this story inside ChatGPT to begin.</article>
+    </div>
+    <div class="footer">
+      <button id="prev" type="button" hidden>← Previous</button>
+      <div class="part" id="part"></div>
+      <button id="next" type="button">Continue →</button>
+      <button id="more" type="button" hidden>More stories</button>
+    </div>
+  </section>
+
   <div class="status" id="status"></div>
 </main>
 <script>
 (() => {
+  const catalogView = document.getElementById('catalogView');
+  const storyView = document.getElementById('storyView');
+  const catalogEl = document.getElementById('catalog');
+  const libraryEl = document.getElementById('library');
   const titleEl = document.getElementById('title');
   const metaEl = document.getElementById('meta');
   const textEl = document.getElementById('text');
@@ -113,10 +205,12 @@ export const WIDGET_HTML = `<!doctype html>
   const readingWindow = document.getElementById('readingWindow');
   const prevEl = document.getElementById('prev');
   const nextEl = document.getElementById('next');
-  const endEl = document.getElementById('end');
+  const moreEl = document.getElementById('more');
   const statusEl = document.getElementById('status');
+
   const visited = new Map();
   let current = null;
+  let catalogData = null;
 
   function resize() {
     requestAnimationFrame(() => {
@@ -129,26 +223,6 @@ export const WIDGET_HTML = `<!doctype html>
     requestAnimationFrame(() => { readingWindow.scrollTop = 0; });
   }
 
-  function render(data) {
-    if (!data || typeof data !== 'object' || !data.text) return false;
-    current = data;
-    visited.set(data.part, data);
-    titleEl.textContent = data.title || 'FICTURN';
-    const tags = Array.isArray(data.tags) ? data.tags.join(' · ') : '';
-    metaEl.textContent = [tags, data.readingMinutes ? data.readingMinutes + ' min' : ''].filter(Boolean).join(' · ');
-    textEl.textContent = data.text;
-    partEl.textContent = 'Part ' + data.part + ' / ' + data.total;
-    barEl.style.width = Math.round((data.part / data.total) * 100) + '%';
-    const ended = Boolean(data.isEnd);
-    prevEl.hidden = data.part <= 1;
-    nextEl.hidden = ended;
-    endEl.hidden = !ended;
-    statusEl.textContent = ended ? 'You have finished this FICTURN.' : '';
-    resetReadingPosition();
-    resize();
-    return true;
-  }
-
   function extract(response) {
     return response?.structuredContent
       || response?.structured_content
@@ -157,28 +231,148 @@ export const WIDGET_HTML = `<!doctype html>
       || null;
   }
 
-  async function fetchPart(part) {
-    if (visited.has(part)) return visited.get(part);
+  function cacheKey(storyId, part) {
+    return String(storyId) + ':' + String(part);
+  }
+
+  function renderCatalog(data) {
+    if (!data || !Array.isArray(data.stories)) return false;
+    catalogData = data;
+    current = null;
+    catalogEl.textContent = '';
+
+    data.stories.forEach((story) => {
+      const card = document.createElement('article');
+      card.className = 'story-card';
+
+      const cardMeta = document.createElement('div');
+      cardMeta.className = 'card-meta';
+      cardMeta.textContent = [story.genre, story.readingMinutes ? story.readingMinutes + ' min' : ''].filter(Boolean).join(' · ');
+
+      const cardTitle = document.createElement('div');
+      cardTitle.className = 'card-title';
+      cardTitle.textContent = story.title || 'Untitled';
+
+      const hook = document.createElement('div');
+      hook.className = 'card-hook';
+      hook.textContent = story.hook || '';
+
+      const bottom = document.createElement('div');
+      bottom.className = 'card-bottom';
+
+      const tags = document.createElement('div');
+      tags.className = 'card-tags';
+      tags.textContent = Array.isArray(story.tags) ? story.tags.join(' · ') : '';
+
+      const read = document.createElement('button');
+      read.type = 'button';
+      read.textContent = 'Read →';
+      read.dataset.storyId = story.id;
+
+      bottom.appendChild(tags);
+      bottom.appendChild(read);
+      card.appendChild(cardMeta);
+      card.appendChild(cardTitle);
+      card.appendChild(hook);
+      card.appendChild(bottom);
+      catalogEl.appendChild(card);
+    });
+
+    storyView.hidden = true;
+    catalogView.hidden = false;
+    libraryEl.hidden = true;
+    statusEl.textContent = '';
+    resize();
+    return true;
+  }
+
+  function renderStory(data) {
+    if (!data || typeof data !== 'object' || !data.text) return false;
+    current = data;
+    visited.set(cacheKey(data.storyId, data.part), data);
+
+    titleEl.textContent = data.title || 'FICTURN';
+    const tags = Array.isArray(data.tags) ? data.tags.join(' · ') : '';
+    metaEl.textContent = [data.genre, tags, data.readingMinutes ? data.readingMinutes + ' min' : ''].filter(Boolean).join(' · ');
+    textEl.textContent = data.text;
+    partEl.textContent = 'Part ' + data.part + ' / ' + data.total;
+    barEl.style.width = Math.round((data.part / data.total) * 100) + '%';
+
+    const ended = Boolean(data.isEnd);
+    prevEl.hidden = data.part <= 1;
+    nextEl.hidden = ended;
+    moreEl.hidden = !ended;
+
+    catalogView.hidden = true;
+    storyView.hidden = false;
+    libraryEl.hidden = false;
+    statusEl.textContent = ended ? 'End.' : '';
+
+    resetReadingPosition();
+    resize();
+    return true;
+  }
+
+  function render(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (data.kind === 'catalog' || Array.isArray(data.stories)) return renderCatalog(data);
+    return renderStory(data);
+  }
+
+  async function openCatalog() {
+    statusEl.textContent = 'Opening library…';
+    try {
+      if (catalogData) {
+        renderCatalog(catalogData);
+        return;
+      }
+      if (!window.openai?.callTool) throw new Error('Tools unavailable');
+      const response = await window.openai.callTool('browse_stories', {});
+      const data = extract(response);
+      if (!renderCatalog(data)) throw new Error('No catalog returned');
+    } catch (_) {
+      statusEl.textContent = 'Could not open the library. Ask ChatGPT to browse FICTURN stories.';
+    }
+  }
+
+  async function startStory(storyId) {
+    statusEl.textContent = 'Opening story…';
+    try {
+      if (!window.openai?.callTool) throw new Error('Tools unavailable');
+      const response = await window.openai.callTool('start_story', { storyId });
+      const data = extract(response);
+      if (!renderStory(data)) throw new Error('No story returned');
+    } catch (_) {
+      statusEl.textContent = 'Could not open that story. Try again.';
+    }
+  }
+
+  async function fetchPart(storyId, part) {
+    const key = cacheKey(storyId, part);
+    if (visited.has(key)) return visited.get(key);
     if (!window.openai?.callTool) return null;
     const response = part === 1
-      ? await window.openai.callTool('start_story', {})
-      : await window.openai.callTool('next_fragment', { part });
+      ? await window.openai.callTool('start_story', { storyId })
+      : await window.openai.callTool('next_fragment', { storyId, part });
     return extract(response);
   }
 
   async function goTo(part) {
     if (!current || part < 1 || part > current.total) return;
+    const storyId = current.storyId;
     prevEl.disabled = true;
     nextEl.disabled = true;
+    moreEl.disabled = true;
     statusEl.textContent = '';
     try {
-      const data = await fetchPart(part);
-      if (!render(data)) throw new Error('No fragment returned');
+      const data = await fetchPart(storyId, part);
+      if (!renderStory(data)) throw new Error('No fragment returned');
     } catch (_) {
       statusEl.textContent = 'Could not open that part. Try again.';
     } finally {
       prevEl.disabled = false;
       nextEl.disabled = false;
+      moreEl.disabled = false;
       nextEl.textContent = 'Continue →';
       resize();
     }
@@ -195,6 +389,17 @@ export const WIDGET_HTML = `<!doctype html>
     await goTo(current.part - 1);
   }
 
+  catalogEl.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const button = target.closest('button[data-story-id]');
+    if (!button) return;
+    const storyId = button.dataset.storyId;
+    if (storyId) startStory(storyId);
+  });
+
+  libraryEl.addEventListener('click', openCatalog);
+  moreEl.addEventListener('click', openCatalog);
   prevEl.addEventListener('click', previousStory);
   nextEl.addEventListener('click', continueStory);
 
