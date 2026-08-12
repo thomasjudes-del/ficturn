@@ -69,10 +69,7 @@ export const WIDGET_HTML = `<!doctype html>
     -webkit-overflow-scrolling: touch;
     padding-right: 2px;
   }
-  .catalog-list {
-    display: grid;
-    gap: 10px;
-  }
+  .catalog-list { display: grid; gap: 10px; }
   .story-card {
     padding: 14px;
     border: 1px solid color-mix(in srgb, currentColor 13%, transparent);
@@ -169,9 +166,7 @@ export const WIDGET_HTML = `<!doctype html>
   <section id="catalogView" hidden>
     <h2>Choose a story</h2>
     <p class="catalog-sub">Finished, authored fiction made to be read inside the conversation.</p>
-    <div class="catalog-window">
-      <div class="catalog-list" id="catalog"></div>
-    </div>
+    <div class="catalog-window"><div class="catalog-list" id="catalog"></div></div>
   </section>
 
   <section id="storyView" hidden>
@@ -236,12 +231,13 @@ export const WIDGET_HTML = `<!doctype html>
   }
 
   function renderCatalog(data) {
-    if (!data || !Array.isArray(data.stories)) return false;
-    catalogData = data;
+    const stories = Array.isArray(data?.stories) ? data.stories : Array.isArray(data) ? data : null;
+    if (!stories) return false;
+    catalogData = { kind: 'catalog', stories };
     current = null;
     catalogEl.textContent = '';
 
-    data.stories.forEach((story) => {
+    stories.forEach((story) => {
       const card = document.createElement('article');
       card.className = 'story-card';
 
@@ -291,6 +287,12 @@ export const WIDGET_HTML = `<!doctype html>
     current = data;
     visited.set(cacheKey(data.storyId, data.part), data);
 
+    // New server responses carry the compact library directly. This makes the
+    // Library button work even when ChatGPT has not refreshed its MCP tool snapshot.
+    if (Array.isArray(data.library)) {
+      catalogData = { kind: 'catalog', stories: data.library };
+    }
+
     titleEl.textContent = data.title || 'FICTURN';
     const tags = Array.isArray(data.tags) ? data.tags.join(' · ') : '';
     metaEl.textContent = [data.genre, tags, data.readingMinutes ? data.readingMinutes + ' min' : ''].filter(Boolean).join(' · ');
@@ -320,18 +322,20 @@ export const WIDGET_HTML = `<!doctype html>
   }
 
   async function openCatalog() {
+    statusEl.textContent = '';
+    if (catalogData) {
+      renderCatalog(catalogData);
+      return;
+    }
+
     statusEl.textContent = 'Opening library…';
     try {
-      if (catalogData) {
-        renderCatalog(catalogData);
-        return;
-      }
       if (!window.openai?.callTool) throw new Error('Tools unavailable');
       const response = await window.openai.callTool('browse_stories', {});
       const data = extract(response);
       if (!renderCatalog(data)) throw new Error('No catalog returned');
     } catch (_) {
-      statusEl.textContent = 'Could not open the library. Ask ChatGPT to browse FICTURN stories.';
+      statusEl.textContent = 'Could not open the library yet. Refresh the FICTURN app tools once.';
     }
   }
 
@@ -343,7 +347,7 @@ export const WIDGET_HTML = `<!doctype html>
       const data = extract(response);
       if (!renderStory(data)) throw new Error('No story returned');
     } catch (_) {
-      statusEl.textContent = 'Could not open that story. Try again.';
+      statusEl.textContent = 'Could not open that story. Refresh the FICTURN app tools once.';
     }
   }
 
