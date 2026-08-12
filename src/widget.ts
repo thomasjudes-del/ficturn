@@ -1,4 +1,4 @@
-export const WIDGET_URI = "ui://ficturn/reader.html";
+export const WIDGET_URI = "ui://ficturn/reader-v2.html";
 export const WIDGET_MIME = "text/html+skybridge";
 
 export const WIDGET_HTML = `<!doctype html>
@@ -9,23 +9,19 @@ export const WIDGET_HTML = `<!doctype html>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
-    background: transparent;
-    color: inherit;
-  }
+  body { margin: 0; background: transparent; color: inherit; }
   .reader {
     max-width: 720px;
     margin: 0 auto;
-    padding: 18px 18px 14px;
+    padding: 18px;
     border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
     border-radius: 18px;
     background: color-mix(in srgb, Canvas 96%, transparent);
   }
-  .reader:focus { outline: none; }
-  .brand {
+  .brand, .meta, .part, .status, button {
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .brand {
     font-size: 11px;
     letter-spacing: .16em;
     text-transform: uppercase;
@@ -33,30 +29,27 @@ export const WIDGET_HTML = `<!doctype html>
     margin-bottom: 14px;
   }
   h1 {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
     font-size: 25px;
     line-height: 1.08;
     margin: 0 0 5px;
     font-weight: 650;
   }
-  .meta {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 12px;
-    opacity: .62;
-    margin-bottom: 18px;
-  }
-  .progress {
-    height: 2px;
-    background: color-mix(in srgb, currentColor 12%, transparent);
-    margin: 0 0 20px;
-    overflow: hidden;
-  }
-  .progress > div {
-    height: 100%;
-    width: 20%;
-    background: currentColor;
-    transition: width .25s ease;
+  .meta { font-size: 12px; opacity: .62; margin-bottom: 16px; }
+  .progress { height: 2px; background: color-mix(in srgb, currentColor 12%, transparent); margin-bottom: 14px; overflow: hidden; }
+  .progress > div { height: 100%; width: 20%; background: currentColor; transition: width .2s ease; }
+  .reading-window {
+    max-height: 56dvh;
+    min-height: 260px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding: 4px 4px 8px 0;
+    scroll-behavior: auto;
   }
   .text {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
     font-size: 17px;
     line-height: 1.58;
     white-space: pre-wrap;
@@ -66,74 +59,58 @@ export const WIDGET_HTML = `<!doctype html>
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 10px;
-    margin-top: 22px;
-    padding-top: 14px;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-    font-family: ui-sans-serif, system-ui, sans-serif;
   }
-  .part {
-    grid-column: 2;
-    font-size: 12px;
-    opacity: .55;
-    white-space: nowrap;
-  }
+  .part { grid-column: 2; font-size: 12px; opacity: .55; white-space: nowrap; }
   button {
     appearance: none;
     border: 1px solid currentColor;
     border-radius: 999px;
-    padding: 10px 14px;
-    font: 600 13px/1 ui-sans-serif, system-ui, sans-serif;
+    padding: 10px 13px;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
     color: inherit;
     background: transparent;
     cursor: pointer;
     white-space: nowrap;
   }
-  button:disabled { opacity: .4; cursor: default; }
+  button:disabled { opacity: .4; }
   #prev { grid-column: 1; justify-self: start; }
   #next { grid-column: 3; justify-self: end; }
-  .end {
-    grid-column: 3;
-    justify-self: end;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 650;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-  }
-  .status {
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 12px;
-    opacity: .6;
-    margin-top: 10px;
-    min-height: 16px;
-  }
+  .end { grid-column: 3; justify-self: end; font: 650 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .status { min-height: 14px; margin-top: 8px; font-size: 11px; opacity: .58; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-  <main class="reader" id="reader" tabindex="-1">
-    <div class="brand">FICTURN · Stories you enter.</div>
-    <h1 id="title">FICTURN</h1>
-    <div class="meta" id="meta">Loading story…</div>
-    <div class="progress"><div id="bar"></div></div>
+<main class="reader">
+  <div class="brand">FICTURN · Stories you enter.</div>
+  <h1 id="title">FICTURN</h1>
+  <div class="meta" id="meta">Loading story…</div>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="reading-window" id="readingWindow">
     <article class="text" id="text">Open this story inside ChatGPT to begin.</article>
-    <div class="footer">
-      <button id="prev" type="button" hidden>← Previous</button>
-      <div class="part" id="part"></div>
-      <button id="next" type="button">Continue →</button>
-      <div class="end" id="end" hidden>End</div>
-    </div>
-    <div class="status" id="status"></div>
-  </main>
+  </div>
+  <div class="footer">
+    <button id="prev" type="button" hidden>← Previous</button>
+    <div class="part" id="part"></div>
+    <button id="next" type="button">Continue →</button>
+    <div class="end" id="end" hidden>End</div>
+  </div>
+  <div class="status" id="status"></div>
+</main>
 <script>
 (() => {
-  const readerEl = document.getElementById('reader');
   const titleEl = document.getElementById('title');
   const metaEl = document.getElementById('meta');
   const textEl = document.getElementById('text');
   const partEl = document.getElementById('part');
   const barEl = document.getElementById('bar');
+  const readingWindow = document.getElementById('readingWindow');
   const prevEl = document.getElementById('prev');
   const nextEl = document.getElementById('next');
   const endEl = document.getElementById('end');
@@ -147,28 +124,13 @@ export const WIDGET_HTML = `<!doctype html>
     });
   }
 
-  function jumpToTop() {
-    const jump = () => {
-      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch (_) {}
-      try {
-        if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
-      } catch (_) {}
-      try { readerEl.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' }); } catch (_) {}
-      try { readerEl.focus({ preventScroll: false }); } catch (_) {}
-    };
-
-    // ChatGPT can resize/re-anchor the embedded widget after the tool result lands.
-    // Re-assert the top position after those layout passes so a new fragment
-    // never opens halfway down the prose on mobile.
-    jump();
-    requestAnimationFrame(jump);
-    setTimeout(jump, 80);
-    setTimeout(jump, 220);
+  function resetReadingPosition() {
+    readingWindow.scrollTop = 0;
+    requestAnimationFrame(() => { readingWindow.scrollTop = 0; });
   }
 
-  function render(data, options = {}) {
+  function render(data) {
     if (!data || typeof data !== 'object' || !data.text) return false;
-    const shouldJump = options.jump !== false;
     current = data;
     visited.set(data.part, data);
     titleEl.textContent = data.title || 'FICTURN';
@@ -177,15 +139,13 @@ export const WIDGET_HTML = `<!doctype html>
     textEl.textContent = data.text;
     partEl.textContent = 'Part ' + data.part + ' / ' + data.total;
     barEl.style.width = Math.round((data.part / data.total) * 100) + '%';
-
     const ended = Boolean(data.isEnd);
     prevEl.hidden = data.part <= 1;
     nextEl.hidden = ended;
     endEl.hidden = !ended;
     statusEl.textContent = ended ? 'You have finished this FICTURN.' : '';
-
+    resetReadingPosition();
     resize();
-    if (shouldJump) jumpToTop();
     return true;
   }
 
@@ -197,57 +157,48 @@ export const WIDGET_HTML = `<!doctype html>
       || null;
   }
 
-  async function continueStory() {
-    if (!current || current.isEnd) return;
-    const nextPart = current.part + 1;
+  async function fetchPart(part) {
+    if (visited.has(part)) return visited.get(part);
+    if (!window.openai?.callTool) return null;
+    const response = part === 1
+      ? await window.openai.callTool('start_story', {})
+      : await window.openai.callTool('next_fragment', { part });
+    return extract(response);
+  }
 
-    if (visited.has(nextPart)) {
-      render(visited.get(nextPart));
-      return;
-    }
-
-    nextEl.disabled = true;
-    nextEl.textContent = 'Opening…';
+  async function goTo(part) {
+    if (!current || part < 1 || part > current.total) return;
     prevEl.disabled = true;
+    nextEl.disabled = true;
     statusEl.textContent = '';
-
     try {
-      if (window.openai?.callTool) {
-        const response = await window.openai.callTool('next_fragment', { part: nextPart });
-        const data = extract(response);
-        if (!render(data)) throw new Error('No story fragment returned');
-      } else if (window.openai?.sendFollowUpMessage) {
-        await window.openai.sendFollowUpMessage({ prompt: 'Continue FICTURN with part ' + nextPart + '.' });
-        statusEl.textContent = 'The next part will appear in the chat.';
-      } else {
-        statusEl.textContent = 'Type “continue” in the chat to keep reading.';
-      }
-    } catch (error) {
-      statusEl.textContent = 'Could not open the next part. Type “continue” in the chat.';
+      const data = await fetchPart(part);
+      if (!render(data)) throw new Error('No fragment returned');
+    } catch (_) {
+      statusEl.textContent = 'Could not open that part. Try again.';
     } finally {
+      prevEl.disabled = false;
       nextEl.disabled = false;
       nextEl.textContent = 'Continue →';
-      prevEl.disabled = false;
       resize();
     }
   }
 
-  function previousStory() {
+  async function continueStory() {
+    if (!current || current.isEnd) return;
+    nextEl.textContent = 'Opening…';
+    await goTo(current.part + 1);
+  }
+
+  async function previousStory() {
     if (!current || current.part <= 1) return;
-    const previousPart = current.part - 1;
-    const previous = visited.get(previousPart);
-    if (previous) {
-      render(previous);
-    } else {
-      statusEl.textContent = 'The previous part is not available in this reader session.';
-    }
+    await goTo(current.part - 1);
   }
 
   prevEl.addEventListener('click', previousStory);
   nextEl.addEventListener('click', continueStory);
 
-  if (window.openai?.toolOutput) render(window.openai.toolOutput, { jump: false });
-
+  if (window.openai?.toolOutput) render(window.openai.toolOutput);
   window.addEventListener('openai:set_globals', (event) => {
     const globals = event?.detail?.globals || event?.detail || {};
     if (globals.toolOutput) render(globals.toolOutput);
