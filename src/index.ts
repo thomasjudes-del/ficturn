@@ -3,7 +3,8 @@ import { z } from "zod";
 import { getFragment, story } from "./story";
 import { WIDGET_HTML, WIDGET_MIME, WIDGET_URI } from "./widget";
 
-const VERSION = "0.0.1";
+const VERSION = "0.0.2";
+const LEGACY_WIDGET_URI = "ui://ficturn/reader.html";
 
 function appMeta() {
   return {
@@ -47,6 +48,35 @@ function toolResult(part: number) {
     ],
     structuredContent: payload,
   };
+}
+
+function registerReaderResource(server: McpServer, uri: string, label: string) {
+  server.registerResource(
+    label,
+    uri,
+    {
+      title: "FICTURN Reader",
+      description: "Minimal inline reader for short authored fiction.",
+      mimeType: WIDGET_MIME,
+      _meta: {
+        ui: { prefersBorder: true },
+        "openai/widgetPrefersBorder": true,
+      },
+    },
+    async (resourceUri) => ({
+      contents: [
+        {
+          uri: resourceUri.href,
+          mimeType: WIDGET_MIME,
+          text: WIDGET_HTML,
+          _meta: {
+            ui: { prefersBorder: true },
+            "openai/widgetPrefersBorder": true,
+          },
+        },
+      ],
+    }),
+  );
 }
 
 function createServer() {
@@ -96,32 +126,12 @@ function createServer() {
     async ({ part }) => toolResult(part),
   );
 
-  server.registerResource(
-    "FICTURN reader",
-    WIDGET_URI,
-    {
-      title: "FICTURN Reader",
-      description: "Minimal inline reader for short authored fiction.",
-      mimeType: WIDGET_MIME,
-      _meta: {
-        ui: { prefersBorder: true },
-        "openai/widgetPrefersBorder": true,
-      },
-    },
-    async (uri) => ({
-      contents: [
-        {
-          uri: uri.href,
-          mimeType: WIDGET_MIME,
-          text: WIDGET_HTML,
-          _meta: {
-            ui: { prefersBorder: true },
-            "openai/widgetPrefersBorder": true,
-          },
-        },
-      ],
-    }),
-  );
+  // Current template URI for new scans plus the original URI so an already
+  // configured ChatGPT draft can still fetch the reader without being recreated.
+  registerReaderResource(server, WIDGET_URI, "FICTURN reader v2");
+  if (WIDGET_URI !== LEGACY_WIDGET_URI) {
+    registerReaderResource(server, LEGACY_WIDGET_URI, "FICTURN reader legacy alias");
+  }
 
   return server;
 }
