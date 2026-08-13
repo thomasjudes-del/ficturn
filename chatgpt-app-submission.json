@@ -1,0 +1,116 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "FICTURN",
+    "subtitle": "Read short fiction in ChatGPT",
+    "description": "FICTURN lets users browse and read short, finished fiction directly inside ChatGPT. The current library includes romantic suspense, uncanny horror, and near-future speculative fiction, presented in an inline reader with progress, Previous and Continue navigation, and a Library view. FICTURN serves fixed story text and does not generate or rewrite the prose on the fly.",
+    "category": "ENTERTAINMENT"
+  },
+  "tools": {
+    "browse_stories": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only returns metadata for the fixed FICTURN catalog and does not modify data or state.",
+        "open_world_justification": "Does not publish content, contact third parties, or change any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or perform any irreversible action."
+      }
+    },
+    "start_story": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves part one of a selected fixed story and returns it to the reader.",
+        "open_world_justification": "Does not publish content, contact third parties, or change any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or perform any irreversible action."
+      }
+    },
+    "next_fragment": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the requested fragment of a fixed story and returns it to the reader.",
+        "open_world_justification": "Does not publish content, contact third parties, or change any external system.",
+        "destructive_justification": "Does not delete, overwrite, revoke, or perform any irreversible action."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Browse the available FICTURN story catalog.",
+      "user_prompt": "What stories does FICTURN have?",
+      "file_attachment_urls": null,
+      "tools_triggered": "browse_stories",
+      "expected_output": "Displays the FICTURN library with the three available stories, including their title, genre, hook, tags, mood, and reading time.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Start the romantic suspense story from a genre request.",
+      "user_prompt": "Give me a short romantic suspense story.",
+      "file_attachment_urls": null,
+      "tools_triggered": "start_story",
+      "expected_output": "Opens The Safehouse Rule at part 1 in the inline FICTURN reader.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Start the uncanny horror story from a duration and mood request.",
+      "user_prompt": "I want an eerie five-minute story.",
+      "file_attachment_urls": null,
+      "tools_triggered": "start_story",
+      "expected_output": "Opens Room 713 at part 1 in the inline FICTURN reader.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Start a named near-future story.",
+      "user_prompt": "Start The Last Reply.",
+      "file_attachment_urls": null,
+      "tools_triggered": "start_story",
+      "expected_output": "Opens The Last Reply at part 1 in the inline FICTURN reader.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Continue an already-open story to its exact next fragment.",
+      "user_prompt": "Continue.",
+      "file_attachment_urls": null,
+      "tools_triggered": "next_fragment",
+      "expected_output": "Returns the exact next fixed fragment of the story already being read, without rewriting, skipping, or improvising prose.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not use FICTURN to generate an open-ended sequel.",
+      "user_prompt": "Write a new sequel to Room 713 and keep it going forever.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "FICTURN should not be invoked to generate new prose because it only serves fixed, finished stories.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not use FICTURN to rewrite a canonical ending.",
+      "user_prompt": "Change the ending of The Last Reply so everyone survives.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "FICTURN should not be invoked to rewrite or mutate its fixed story text.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke FICTURN for an unrelated communication task.",
+      "user_prompt": "Send an email to my manager about tomorrow's meeting.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "FICTURN should not be invoked because email and external communication are outside its fiction-reading workflows.",
+      "expected_output_url": null
+    }
+  ]
+}
