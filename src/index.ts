@@ -18,9 +18,6 @@ const GITHUB_REPO = "https://github.com/thomasjudes-del/ficturn";
 const SUPPORT_URL = `${GITHUB_REPO}/issues`;
 const OPENAI_APPS_CHALLENGE = "CCWEhlF94vOBRRKTlcMx4LurZua0NZsDkMHaS-r7tyg";
 
-// The current reader is fully self-contained: it fetches no remote scripts,
-// images, frames, or third-party resources. Keep the CSP empty until a future UI
-// version intentionally adds an external dependency.
 const UI_CSP = {
   connectDomains: [] as string[],
   resourceDomains: [] as string[],
@@ -130,10 +127,7 @@ function registerReaderResource(server: McpServer, uri: string, label: string) {
 }
 
 function createServer() {
-  const server = new McpServer({
-    name: "FICTURN",
-    version: VERSION,
-  });
+  const server = new McpServer({ name: "FICTURN", version: VERSION });
 
   server.registerTool(
     "browse_stories",
@@ -142,11 +136,7 @@ function createServer() {
       description:
         "Show the FICTURN library of short, finished, pre-authored stories with genre, mood, reading time and hook. Use when the user asks what FICTURN has, wants a short story to read, or wants to choose among the available stories.",
       inputSchema: z.object({}),
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: false,
-      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
       _meta: appMeta(),
     },
     async () => catalogResult(),
@@ -159,15 +149,9 @@ function createServer() {
       description:
         "Start one finished, pre-authored FICTURN story in the embedded reader. If no story is specified, open The Safehouse Rule. Available stories include romantic suspense, uncanny horror, and a near-future digital-twin thriller.",
       inputSchema: z.object({
-        storyId: storyIdSchema
-          .optional()
-          .describe("Story to open: the-safehouse-rule, room-713, or the-last-reply."),
+        storyId: storyIdSchema.optional().describe("Story to open: the-safehouse-rule, room-713, or the-last-reply."),
       }),
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: false,
-      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
       _meta: appMeta(),
     },
     async ({ storyId }) => storyResult(storyId ?? DEFAULT_STORY_ID, 1),
@@ -180,21 +164,10 @@ function createServer() {
       description:
         "Return the requested next fragment of the fixed FICTURN story already open in the reader. Never invent, rewrite, summarise, or skip story fragments.",
       inputSchema: z.object({
-        storyId: storyIdSchema
-          .optional()
-          .describe("Story currently being read. Defaults to the-safehouse-rule for legacy clients."),
-        part: z
-          .number()
-          .int()
-          .min(2)
-          .max(MAX_PART)
-          .describe("Exact fragment number to display."),
+        storyId: storyIdSchema.optional().describe("Story currently being read. Defaults to the-safehouse-rule for legacy clients."),
+        part: z.number().int().min(2).max(MAX_PART).describe("Exact fragment number to display."),
       }),
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: false,
-      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
       _meta: appMeta(),
     },
     async ({ storyId, part }) => storyResult(storyId ?? DEFAULT_STORY_ID, part),
@@ -202,7 +175,6 @@ function createServer() {
 
   registerReaderResource(server, WIDGET_URI, "FICTURN reader v2");
   registerReaderResource(server, LEGACY_WIDGET_URI, "FICTURN reader legacy alias");
-
   return server;
 }
 
@@ -216,37 +188,20 @@ function htmlPage(title: string, body: string) {
 }
 
 function homePage() {
-  const cards = stories
-    .map(
-      (story) =>
-        `<li><strong>${story.title}</strong> — ${story.genre}, about ${story.readingMinutes} min.<br><span class="muted">${story.hook}</span></li>`,
-    )
-    .join("");
-  return htmlPage(
-    "Home",
-    `<h1>Short fiction, inside the conversation.</h1><p>FICTURN is a small library of finished, fixed stories designed to be read directly inside ChatGPT through an inline reader. The story prose is not generated on the fly.</p><h2>Current library</h2><ul>${cards}</ul><p><strong>MCP endpoint:</strong> <code>/mcp</code></p>`,
-  );
+  const cards = stories.map((story) => `<li><strong>${story.title}</strong> — ${story.genre}, about ${story.readingMinutes} min.<br><span class="muted">${story.hook}</span></li>`).join("");
+  return htmlPage("Home", `<h1>Short fiction, inside the conversation.</h1><p>FICTURN is a small library of finished, fixed stories designed to be read directly inside ChatGPT through an inline reader. The story prose is not generated on the fly.</p><h2>Current library</h2><ul>${cards}</ul><p><strong>MCP endpoint:</strong> <code>/mcp</code></p>`);
 }
 
 function privacyPage() {
-  return htmlPage(
-    "Privacy Policy",
-    `<h1>Privacy Policy</h1><p class="muted">Effective August 13, 2026.</p><p>FICTURN is designed to work without user accounts, advertising, payments, or a server-side reading-history database.</p><h2>Data FICTURN processes</h2><p>The MCP tools receive only the narrow parameters needed to serve the experience, such as the selected story identifier and fragment number. FICTURN does not ask for names, email addresses, passwords, payment information, precise location, or full conversation history.</p><p>As with ordinary internet services, technical request data such as IP address, device or browser information, and request metadata may be processed by the platform and hosting infrastructure used to deliver FICTURN.</p><h2>Purposes</h2><p>Data is used only to deliver the requested story or catalog, operate the service, and maintain security and reliability.</p><h2>Recipients</h2><p>Requests are delivered through OpenAI/ChatGPT and hosted on Cloudflare infrastructure. FICTURN does not sell personal data and does not use it for advertising.</p><h2>Retention</h2><p>FICTURN currently maintains no application database, user profile, or server-side reading history. Any transient technical data processed or retained by OpenAI or Cloudflare is subject to those providers' own policies and retention practices.</p><h2>Your controls</h2><p>You can stop using or disconnect FICTURN at any time. Because FICTURN currently stores no application-level user profile or reading history, there is normally no FICTURN account data to delete. For privacy or support questions, use the public support channel linked below.</p><h2>Age</h2><p>FICTURN is not directed to children under 13.</p>`,
-  );
+  return htmlPage("Privacy Policy", `<h1>Privacy Policy</h1><p class="muted">Effective August 13, 2026.</p><p>FICTURN is designed to work without user accounts, advertising, payments, or a server-side reading-history database.</p><h2>Data FICTURN processes</h2><p>The MCP tools receive only the narrow parameters needed to serve the experience, such as the selected story identifier and fragment number. FICTURN does not ask for names, email addresses, passwords, payment information, precise location, or full conversation history.</p><p>As with ordinary internet services, technical request data such as IP address, device or browser information, and request metadata may be processed by the platform and hosting infrastructure used to deliver FICTURN.</p><h2>Purposes</h2><p>Data is used only to deliver the requested story or catalog, operate the service, and maintain security and reliability.</p><h2>Recipients</h2><p>Requests are delivered through OpenAI/ChatGPT and hosted on Cloudflare infrastructure. FICTURN does not sell personal data and does not use it for advertising.</p><h2>Retention</h2><p>FICTURN currently maintains no application database, user profile, or server-side reading history. Any transient technical data processed or retained by OpenAI or Cloudflare is subject to those providers' own policies and retention practices.</p><h2>Your controls</h2><p>You can stop using or disconnect FICTURN at any time. Because FICTURN currently stores no application-level user profile or reading history, there is normally no FICTURN account data to delete. For privacy or support questions, use the public support channel linked below.</p><h2>Age</h2><p>FICTURN is not directed to children under 13.</p>`);
 }
 
 function termsPage() {
-  return htmlPage(
-    "Terms of Use",
-    `<h1>Terms of Use</h1><p class="muted">Effective August 13, 2026.</p><p>FICTURN provides short fictional works for personal reading inside supported conversational interfaces.</p><h2>Fictional content</h2><p>The stories are works of fiction. Names, characters, events, organizations, and situations are fictional or used fictitiously unless explicitly stated otherwise.</p><h2>Permitted use</h2><p>You may use FICTURN for personal, non-commercial reading. Do not use the service to infringe intellectual-property rights, interfere with the service, or attempt unauthorized access to its infrastructure.</p><h2>Availability</h2><p>FICTURN is provided on an as-available basis. Features, catalog titles, and supported interfaces may change. No guarantee is made that the service will be uninterrupted or error-free.</p><h2>No professional advice</h2><p>FICTURN is an entertainment product. Its fictional content is not medical, legal, financial, safety, or other professional advice.</p><h2>Changes</h2><p>These terms may be updated as the product evolves. The effective date above identifies the current version.</p><h2>Questions</h2><p>For support or questions about these terms, use the public support channel linked below.</p>`,
-  );
+  return htmlPage("Terms of Use", `<h1>Terms of Use</h1><p class="muted">Effective August 13, 2026.</p><p>FICTURN provides short fictional works for personal reading inside supported conversational interfaces.</p><h2>Fictional content</h2><p>The stories are works of fiction. Names, characters, events, organizations, and situations are fictional or used fictitiously unless explicitly stated otherwise.</p><h2>Permitted use</h2><p>You may use FICTURN for personal, non-commercial reading. Do not use the service to infringe intellectual-property rights, interfere with the service, or attempt unauthorized access to its infrastructure.</p><h2>Availability</h2><p>FICTURN is provided on an as-available basis. Features, catalog titles, and supported interfaces may change. No guarantee is made that the service will be uninterrupted or error-free.</p><h2>No professional advice</h2><p>FICTURN is an entertainment product. Its fictional content is not medical, legal, financial, safety, or other professional advice.</p><h2>Changes</h2><p>These terms may be updated as the product evolves. The effective date above identifies the current version.</p><h2>Questions</h2><p>For support or questions about these terms, use the public support channel linked below.</p>`);
 }
 
 function supportPage() {
-  return htmlPage(
-    "Support",
-    `<h1>Support</h1><p>For bugs, reader problems, accessibility issues, privacy questions, or other support requests, open an issue in the public FICTURN repository.</p><p><a href="${SUPPORT_URL}">Open FICTURN support on GitHub</a></p><p class="muted">Please do not post passwords, private conversation content, or other sensitive personal information in a public issue.</p>`,
-  );
+  return htmlPage("Support", `<h1>Support</h1><p>For bugs, reader problems, accessibility issues, privacy questions, or other support requests, open an issue in the public FICTURN repository.</p><p><a href="${SUPPORT_URL}">Open FICTURN support on GitHub</a></p><p class="muted">Please do not post passwords, private conversation content, or other sensitive personal information in a public issue.</p>`);
 }
 
 export default {
@@ -261,14 +216,11 @@ export default {
     if (url.pathname === "/.well-known/openai-apps-challenge") {
       return new Response(OPENAI_APPS_CHALLENGE, {
         status: 200,
-        headers: {
-          "content-type": "text/plain",
-          "cache-control": "no-store",
-        },
+        headers: { "content-type": "text/plain", "cache-control": "no-store" },
       });
     }
 
-    if (url.pathname === "/mcp") {
+    if (url.pathname === "/mcp" || url.pathname === "/mcp-test") {
       return mcp.fetch(request);
     }
 
