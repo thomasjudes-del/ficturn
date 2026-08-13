@@ -3,5 +3,8 @@
   "name": "ficturn",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-12",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "OPENAI_APPS_CHALLENGE": "CCWEhlF94vOBRRKTlcMx4LurZua0NZsDkMHaS-r7tyg"
+  }
 }
