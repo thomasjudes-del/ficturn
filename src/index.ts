@@ -16,10 +16,7 @@ const storyIdSchema = z.enum(STORY_IDS);
 const MAX_PART = Math.max(...stories.map((item) => item.fragments.length));
 const GITHUB_REPO = "https://github.com/thomasjudes-del/ficturn";
 const SUPPORT_URL = `${GITHUB_REPO}/issues`;
-
-interface Env {
-  OPENAI_APPS_CHALLENGE?: string;
-}
+const OPENAI_APPS_CHALLENGE = "CCWEhlF94vOBRRKTlcMx4LurZua0NZsDkMHaS-r7tyg";
 
 // The current reader is fully self-contained: it fetches no remote scripts,
 // images, frames, or third-party resources. Keep the CSP empty until a future UI
@@ -253,7 +250,7 @@ function supportPage() {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/") return homePage();
@@ -262,11 +259,12 @@ export default {
     if (url.pathname === "/support") return supportPage();
 
     if (url.pathname === "/.well-known/openai-apps-challenge") {
-      if (!env.OPENAI_APPS_CHALLENGE) {
-        return new Response("Not Found", { status: 404 });
-      }
-      return new Response(env.OPENAI_APPS_CHALLENGE, {
-        headers: { "content-type": "text/plain; charset=utf-8" },
+      return new Response(OPENAI_APPS_CHALLENGE, {
+        status: 200,
+        headers: {
+          "content-type": "text/plain",
+          "cache-control": "no-store",
+        },
       });
     }
 
@@ -276,4 +274,4 @@ export default {
 
     return new Response("Not Found", { status: 404 });
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler;
