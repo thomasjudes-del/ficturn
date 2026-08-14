@@ -16,7 +16,7 @@ const storyIdSchema = z.enum(STORY_IDS);
 const MAX_PART = Math.max(...stories.map((item) => item.fragments.length));
 const GITHUB_REPO = "https://github.com/thomasjudes-del/ficturn";
 const SUPPORT_URL = `${GITHUB_REPO}/issues`;
-const OPENAI_APPS_CHALLENGE = "CCWEhlF94vOBRRKTlcMx4LurZua0NZsDkMHaS-r7tyg";
+const OPENAI_APPS_CHALLENGE = "CCWEhLF94vOBRRKTlcMx4LurZua0NzsDkMHaS-r7tyg";
 
 const UI_CSP = {
   connectDomains: [] as string[],
